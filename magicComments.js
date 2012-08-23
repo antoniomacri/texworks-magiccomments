@@ -23,10 +23,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+ 
+// Internationalization
 var CANNOT_LOAD_FILE = "Cannot load \"%0\" (status: %1\).";
 var CANNOT_CREATE_UI = "Cannot create the UI dialog.";
 
+
+// Utility functions
+String.prototype.format = function()
+{
+  var fmt = this;
+  for (var i = 0; i < arguments.length; i++) {
+    fmt = fmt.replace(new RegExp("%" + i, "g"), arguments[i]);
+  }
+  return fmt;
+}
 
 // String.trim was introduced in Qt 4.7
 if(typeof(String.prototype.trim) == "undefined")
@@ -37,18 +48,53 @@ if(typeof(String.prototype.trim) == "undefined")
   })();
 }
 
-String.prototype.format = function()
+// Used to escape paths
+function EscapeXml(str)
 {
-  var fmt = this;
-  for (var i = 0; i < arguments.length; i++) {
-    fmt = fmt.replace(new RegExp("%" + i, "g"), arguments[i]);
-  }
-  return fmt;
+  str = str.replace(/&/g, "&amp;");
+  str = str.replace(/</g, "&lt;");
+  return str.replace(/>/g, "&gt;");
 }
 
 
-var PEEK_LENGTH = 1024;                    // from TeXworks' sources
-var fmtMagicComment = "% !TeX %0 = %1\n";  // used to write options
+function GetDocumentList()
+{
+  return TW.app.getOpenWindows().filter(function(w) {
+    return w.objectName == "TeXDocument";
+  }).map(function(w) {
+    return w.fileName.split(reSplit);
+  }).map(function(b) {
+    var i = 0;
+    while (i < breadcrumbs.length && b[i] == breadcrumbs[i])
+      i++;
+    var result = b.slice(i).join('/');
+    if (i < breadcrumbs.length)
+      result = new Array(breadcrumbs.length-i+1).join("../") + result;
+    return result;
+  });
+}
+
+function GetDictionaryList()
+{
+  // TW.getDictionaryList introduced in r962
+  if (!TW.getDictionaryList) {
+    return null;
+  }
+  var result = [];
+  var list = TW.getDictionaryList();
+  for (var d in list) {
+    // avoid multiple references to the same dictionary
+    if (result.indexOf(list[d][0]) < 0)
+      result.push(list[d][0]);
+  }
+  var reFileName = new RegExp("([^\\\\/]+)\\.[^.]+$");
+  return result.map(function(o) { return reFileName.exec(o)[1]; });
+}
+
+
+var TeXShopCompatibility = true;
+var PEEK_LENGTH = 1024;  // from TeXworks' sources
+var fmtMagicComment = "% !TeX %0 = %1\n";
 
 var reSplit = new RegExp("[\\\\/]");
 var breadcrumbs = TW.target.fileName.split(reSplit).slice(0,-1);
@@ -58,15 +104,18 @@ var options = [
     Key: "encoding",
     Regex: new RegExp("% *!TEX +encoding *= *(.+)\\n", "i"),
     List: [
-      "UTF-8 (utf-8)",
-      "ISO-8859-1 (latin1)",
-      "Apple Roman (applemac)",
-    ],
+      [ "UTF-8", "UTF-8 Unicode", "utf-8" ],
+      [ "ISO-8859-1", "IsoLatin", "latin1" ],
+      [ "Apple Roman", "MacOSRoman", "applemac" ],
+    ].map(function(l) {
+      if (TeXShopCompatibility) {
+        var t = l[0]; l[0] = l[1]; l[1] = t;
+      }
+      return l[0] + " (" + l[1] + ", " + l[2] + ")";
+    }),
     ToDisplayValue: function() {
-      var re = /^(.+)\(.+\)\s*$/;
       for (var i=0; i < this.List.length; i++) {
-        var m = re.exec(this.List[i]);
-        if (m && m[1].trim() == this.Value) {
+        if (this.List[i].indexOf(this.Value) >= 0) {
           return this.List[i];
         }
       }
@@ -91,66 +140,36 @@ var options = [
       "ConTeXt (LuaTeX)",
       "ConTeXt (pdfTeX)",
       "ConTeXt (XeTeX)",
-      "LaTeXmk",
       "BibTeX",
-      "Biber",
       "MakeIndex",
     ],
+    Produce: function() {
+      return this.Value ? fmtMagicComment.format(TeXShopCompatibility ?
+        "TS-program" : "program", this.Value) : "";
+    },
   },
   {
     Key: "root",
     Regex: new RegExp("% *!TEX +root *= *(.+)\\n", "i"),
-    List: (function() {
-      return TW.app.getOpenWindows().filter(function(w) {
-        return w.objectName == "TeXDocument";
-      }).map(function(w) {
-        return w.fileName.split(reSplit);
-      }).map(function(b) {
-        var i = 0;
-        while (i < breadcrumbs.length && b[i] == breadcrumbs[i])
-          i++;
-        var result = b.slice(i).join('/');
-        if (i < breadcrumbs.length)
-          result = new Array(breadcrumbs.length-i+1).join("../") + result;
-        return result;
-      });
-    })(),
-    BeforeWrite: function() {
+    List: GetDocumentList(),
+    Produce: function() {
       // On Unix systems, TeXworks requires slashes, not backslashes
-      return this.Value = this.Value.replace(/\\/g, '/');
+      return this.Value ? fmtMagicComment.format(this.Key,
+        this.Value.replace(/\\/g, '/')) : "";
     },
   },
   {
     Key: "spellcheck",
     Regex: new RegExp("% *!TEX +spellcheck *= *(.+)\\n", "i"),
-    // TW.getDictionaryList introduced in r962
-    List: !TW.getDictionaryList ? [
-      "de_DE (Deutsch)",
-      "en_US (English)",
-      "es_ES (Español)",
-      "fr_FR (Français)",
-      "it_IT (Italiano)",
-    ] : (function() {
-      var result = [];
-      var list = TW.getDictionaryList();
-      for (var d in list) {
-        // avoid multiple references to the same dictionary
-        if (result.indexOf(list[d][0]) < 0)
-          result.push(list[d][0]);
-      }
-      var reFileName = new RegExp("([^\\\\/]+)\\.[^.]+$");
-      return result.map(function(o) { return reFileName.exec(d)[1]; });
-    })(),
+    List: GetDictionaryList() || [
+      "de_DE",
+      "en_US",
+      "es_ES",
+      "fr_FR",
+      "it_IT",
+    ],
   },
 ];
-
-
-function EscapeXml(str)
-{
-  str = str.replace(/&/g, "&amp;");
-  str = str.replace(/</g, "&lt;");
-  return str.replace(/>/g, "&gt;");
-}
 
 
 function ReadSettingsFromDocument()
@@ -182,10 +201,8 @@ function WriteSettingsToDocument()
     var d2 = typeof(o2.Index) != "undefined";
     return d1 && d2 ? o1.Index - o2.Index : d2 - d1;
   }).forEach(function(o) {
-    if (o.Value && o.BeforeWrite) {
-      o.BeforeWrite();
-    }
-    var rep = o.Value ? fmtMagicComment.format(o.Key, o.Value) : ""; 
+    var rep = !o.Value ? "" : o.Produce ? o.Produce() :
+                fmtMagicComment.format(o.Key, o.Value);
     if (typeof(o.Index) != "undefined") {
       TW.target.selectRange(o.Index + offset, o.Length);
       last = o.Index + offset + rep.length;
@@ -257,14 +274,6 @@ function ShowDialog(ui_file)
       }
     });
   }
-
-  try {
-    dialog.deleteLater();
-    options.forEach(function(o) {
-      cmb[o.Key].deleteLater();
-    });
-  } catch (e) {}
-
   return result;
 }
 
@@ -276,4 +285,3 @@ if (typeof(justLoad) == "undefined") {
   }
 }
 undefined;
-
