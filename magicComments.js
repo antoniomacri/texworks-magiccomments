@@ -71,6 +71,15 @@ var EncodingList = [
   [ "Apple Roman", "MacOSRoman", "applemac" ],
 ];
 
+function GetEngineList()
+{
+  // TW.getEngineList introduced in r1024
+  if (!TW.getEngineList) {
+    return null;
+  }
+  return TW.getEngineList().map(function (e) { return e.name; });
+}
+
 function GetDocumentList()
 {
   return TW.app.getOpenWindows().filter(function(w) {
@@ -152,7 +161,7 @@ var magicComments = [
   MagicComment({
     Key: "program",
     Regex: /% *!TEX +(?:TS-)?program *= *(.+)\n/i,
-    List: [
+    List: GetEngineList() || [
       "pdfLaTeX",
       "XeLaTeX",
       "LuaLaTeX",
