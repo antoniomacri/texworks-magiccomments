@@ -23,7 +23,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- 
+
 // Internationalization
 var CANNOT_LOAD_FILE = "Cannot load \"%0\" (status: %1\).";
 var CANNOT_CREATE_UI = "Cannot create the UI dialog.";
@@ -57,19 +57,34 @@ function EscapeXml(str)
 }
 
 
+var TeXShopCompatibility = true;
+var PEEK_LENGTH = 1024;  // from TeXworks' sources
+var fmtMagicComment = "% !TeX %0 = %1\n";
+
+var reSplit = new RegExp("[\\\\/]");
+var breadcrumbs = TW.target.fileName.split(reSplit).slice(0,-1);
+
+
+var EncodingList = [
+  [ "UTF-8", "UTF-8 Unicode", "utf-8" ],
+  [ "ISO-8859-1", "IsoLatin", "latin1" ],
+  [ "Apple Roman", "MacOSRoman", "applemac" ],
+];
+
 function GetDocumentList()
 {
   return TW.app.getOpenWindows().filter(function(w) {
     return w.objectName == "TeXDocument";
   }).map(function(w) {
-    return w.fileName.split(reSplit);
-  }).map(function(b) {
+    var b = w.fileName.split(reSplit);
     var i = 0;
-    while (i < breadcrumbs.length && b[i] == breadcrumbs[i])
+    while (i < breadcrumbs.length && b[i] == breadcrumbs[i]) {
       i++;
+    }
     var result = b.slice(i).join('/');
-    if (i < breadcrumbs.length)
+    if (i < breadcrumbs.length) {
       result = new Array(breadcrumbs.length-i+1).join("../") + result;
+    }
     return result;
   });
 }
@@ -84,52 +99,59 @@ function GetDictionaryList()
   var list = TW.getDictionaryList();
   for (var d in list) {
     // avoid multiple references to the same dictionary
-    if (result.indexOf(list[d][0]) < 0)
+    if (result.indexOf(list[d][0]) < 0) {
       result.push(list[d][0]);
+    }
   }
   var reFileName = new RegExp("([^\\\\/]+)\\.[^.]+$");
   return result.map(function(o) { return reFileName.exec(o)[1]; });
 }
 
 
-var TeXShopCompatibility = true;
-var PEEK_LENGTH = 1024;  // from TeXworks' sources
-var fmtMagicComment = "% !TeX %0 = %1\n";
+function MagicComment(o)
+{
+  o.Regex = o.Regex || new RegExp("% *!TEX +" + o.Key + " *= *(.+)\\n", "i");
+  o.ToDisplayValue = o.ToDisplayValue || function() { return this.Value; };
+  o.FromDisplayValue = o.FromDisplayValue || function(v) { return v; };
+  o.Produce = o.Produce || function() {
+    return fmtMagicComment.format(this.Key, this.Value);
+  };
+  return o;
+}
 
-var reSplit = new RegExp("[\\\\/]");
-var breadcrumbs = TW.target.fileName.split(reSplit).slice(0,-1);
 
-var options = [
-  {
+var magicComments = [
+  MagicComment({
     Key: "encoding",
-    Regex: new RegExp("% *!TEX +encoding *= *(.+)\\n", "i"),
-    List: [
-      [ "UTF-8", "UTF-8 Unicode", "utf-8" ],
-      [ "ISO-8859-1", "IsoLatin", "latin1" ],
-      [ "Apple Roman", "MacOSRoman", "applemac" ],
-    ].map(function(l) {
-      if (TeXShopCompatibility) {
-        var t = l[0]; l[0] = l[1]; l[1] = t;
-      }
-      return l[0] + " (" + l[1] + ", " + l[2] + ")";
+    List: EncodingList.map(function(l) {
+      var index = TeXShopCompatibility ? 1 : 0;
+      return l[index] + " (" + l[1-index] + ", " + l[2] + ")";
     }),
     ToDisplayValue: function() {
+      var v = this.Value.toLowerCase();      
       for (var i=0; i < this.List.length; i++) {
-        if (this.List[i].indexOf(this.Value) >= 0) {
+        if (this.List[i].toLowerCase().indexOf(v) >= 0) {
           return this.List[i];
         }
       }
       return this.Value;
     },
     FromDisplayValue: function(v) {
-      var re = /^(.+)\(.+\)\s*$/;
-      var m = re.exec(v);
-      return this.Value = m ? m[1].trim() : v.trim();
+      var m = /^(.+)\(.+\)\s*$/.exec(v);
+      return m ? m[1].trim() : v;
     },
-  },
-  {
+    Produce: function() {
+      var v = this.Value.toLowerCase();
+      var enc = EncodingList.filter(function(e) {
+        return e.some(function(s) { return s.toLowerCase().indexOf(v) >= 0; });
+      })[0];
+      var index = TeXShopCompatibility ? 1 : 0;
+      return fmtMagicComment.format(this.Key, enc ? enc[index] : this.Value);
+    },
+  }),
+  MagicComment({
     Key: "program",
-    Regex: new RegExp("% *!TEX +(?:TS-)?program *= *(.+)\\n", "i"),
+    Regex: /% *!TEX +(?:TS-)?program *= *(.+)\n/i,
     List: [
       "pdfLaTeX",
       "XeLaTeX",
@@ -144,23 +166,20 @@ var options = [
       "MakeIndex",
     ],
     Produce: function() {
-      return this.Value ? fmtMagicComment.format(TeXShopCompatibility ?
-        "TS-program" : "program", this.Value) : "";
+      return fmtMagicComment.format(TeXShopCompatibility ?
+        "TS-program" : "program", this.Value);
     },
-  },
-  {
+  }),
+  MagicComment({
     Key: "root",
-    Regex: new RegExp("% *!TEX +root *= *(.+)\\n", "i"),
     List: GetDocumentList(),
     Produce: function() {
       // On Unix systems, TeXworks requires slashes, not backslashes
-      return this.Value ? fmtMagicComment.format(this.Key,
-        this.Value.replace(/\\/g, '/')) : "";
+      return fmtMagicComment.format(this.Key, this.Value.replace(/\\/g, '/'));
     },
-  },
-  {
+  }),
+  MagicComment({
     Key: "spellcheck",
-    Regex: new RegExp("% *!TEX +spellcheck *= *(.+)\\n", "i"),
     List: GetDictionaryList() || [
       "de_DE",
       "en_US",
@@ -168,17 +187,17 @@ var options = [
       "fr_FR",
       "it_IT",
     ],
-  },
+  }),
 ];
 
 
-function ReadSettingsFromDocument()
+function ReadMagicCommentsFromDocument()
 {
   // Actually, in TeXworks PEEK_LENGTH specifies
   // how many *bytes* (not chars) are parsed
   var header = TW.target.text.slice(0, PEEK_LENGTH);
 
-  options.forEach(function(o) {
+  magicComments.forEach(function(o) {
     var m = o.Regex.exec(header);
     if (m) {
       o.Index = m.index;
@@ -189,20 +208,19 @@ function ReadSettingsFromDocument()
 }
 
 
-function WriteSettingsToDocument()
+function WriteMagicCommentsToDocument()
 {
   var offset = 0, last = 0;
 
-  options.sort(function(o1,o2) {
-    // We first set/reset options already present (which have an Index)
+  magicComments.sort(function(o1,o2) {
+    // We first set/reset magic comments already present (which have an Index)
     // sorting in ascending order by Index
-    // At last we add new options (having Index undefined)
+    // At last we add new magic comments (having Index undefined)
     var d1 = typeof(o1.Index) != "undefined";
     var d2 = typeof(o2.Index) != "undefined";
     return d1 && d2 ? o1.Index - o2.Index : d2 - d1;
   }).forEach(function(o) {
-    var rep = !o.Value ? "" : o.Produce ? o.Produce() :
-                fmtMagicComment.format(o.Key, o.Value);
+    var rep = o.Value ? o.Produce() : "";
     if (typeof(o.Index) != "undefined") {
       TW.target.selectRange(o.Index + offset, o.Length);
       last = o.Index + offset + rep.length;
@@ -215,8 +233,8 @@ function WriteSettingsToDocument()
     else {
       return;
     }
+    // Avoid recording an undo operation if text is the same
     if (rep != TW.target.selection) {
-      // Avoid recording an undo operation
       TW.target.insertText(rep);
     }
   });
@@ -232,10 +250,11 @@ function ShowDialog(ui_file)
   }
   xml = xml.result;
 
-  options.forEach(function(o) {
+  magicComments.forEach(function(o) {
     var list = "";
     for (var i = 0; i < o.List.length; i++) {
-      list += "<item><property name=\"text\"><string>" + EscapeXml(o.List[i]) + "</string></property></item>";
+      list += "<item><property name=\"text\"><string>" +
+        EscapeXml(o.List[i]) + "</string></property></item>";
     }
     xml = xml.replace("{list-" + o.Key + "}", list);
   });
@@ -247,8 +266,7 @@ function ShowDialog(ui_file)
   }
 
   var cmb = [], chk = [];
-
-  options.forEach(function(o) {
+  magicComments.forEach(function(o) {
     cmb[o.Key] = TW.findChildWidget(dialog, "cmb-" + o.Key);
     chk[o.Key] = TW.findChildWidget(dialog, "chk-" + o.Key);
     cmb[o.Key].editTextChanged.connect(function() {
@@ -256,22 +274,15 @@ function ShowDialog(ui_file)
     });
     if (o.Value) {
       chk[o.Key].checked = true;
-      cmb[o.Key].setEditText(o.ToDisplayValue ? o.ToDisplayValue() : o.Value);
+      cmb[o.Key].setEditText(o.ToDisplayValue());
     }
   });
 
   var result = dialog.exec() == 1;
-
   if (result) {
-    options.forEach(function(o) {
-      if (chk[o.Key].checked) {
-        o.Value = cmb[o.Key].currentText.trim();
-        if (o.FromDisplayValue)
-          o.Value = o.FromDisplayValue(o.Value);
-      }
-      else {
-        o.Value = "";
-      }
+    magicComments.forEach(function(o) {
+      o.Value = chk[o.Key].checked ?
+        o.FromDisplayValue(cmb[o.Key].currentText.trim()) : "";
     });
   }
   return result;
@@ -279,9 +290,9 @@ function ShowDialog(ui_file)
 
 
 if (typeof(justLoad) == "undefined") {
-  ReadSettingsFromDocument();
+  ReadMagicCommentsFromDocument();
   if (ShowDialog("magicComments.ui")) {
-    WriteSettingsToDocument();
+    WriteMagicCommentsToDocument();
   }
 }
 undefined;
