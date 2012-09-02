@@ -2,8 +2,8 @@
 // Title: Edit &magic comments...
 // Description: Edit magic comments
 // Author: Antonio Macrì
-// Version: 0.8
-// Date: 2012-08-18
+// Version: 0.9
+// Date: 2012-09-02
 // Script-Type: standalone
 // Context: TeXDocument
 // Shortcut: Ctrl+K, Ctrl+M
@@ -57,7 +57,7 @@ function EscapeXml(str)
 }
 
 
-var TeXShopCompatibility = true;
+var TeXShopCompatibility = false;
 var PEEK_LENGTH = 1024;  // from TeXworks' sources
 var fmtMagicComment = "% !TeX %0 = %1\n";
 
@@ -287,8 +287,12 @@ function ShowDialog(ui_file)
     }
   });
 
+  var chkTSCompatibility = TW.findChildWidget(dialog, "chkTSCompatibility");
+  chkTSCompatibility.checked = TeXShopCompatibility;
+
   var result = dialog.exec() == 1;
   if (result) {
+    TeXShopCompatibility = chkTSCompatibility.checked;
     magicComments.forEach(function(o) {
       o.Value = chk[o.Key].checked ?
         o.FromDisplayValue(cmb[o.Key].currentText.trim()) : "";
