@@ -77,12 +77,11 @@ function GetEncodingList()
     [ "ISO-8859-9", "IsoLatin5", "latin5" ],
     [ "ISO-8859-15", "IsoLatin9", "latin9" ],
     [ "ISO-8859-16", "", "latin10" ],
-    [ "ISO-8859-1", "IsoLatin" ],
     [ "IBM850", "", "cp850" ],
-    [ "Apple Roman", "MacOSRoman", "applemac" ],
     [ "Windows-1250", "", "cp1250" ],
     [ "Windows-1252", "", "cp1252", "ansinew" ],
     [ "Windows-1257", "", "cp1257" ],
+    [ "Apple Roman", "MacOSRoman", "applemac", "x-mac-roman" ],
     // Missing explicit support in TW:
     //   ascii, decmulti, cp852, cp858, cp437, cp437de, cp865, macce, next
     // Nota: ascii (7-bit) is included in ISO-8859-1 and UTF-8
@@ -96,11 +95,10 @@ function GetEncodingList()
     [ "Windows-1251", "Windows Cyrillic", "x-cp1251" ],
     [ "Windows-1255", "", "x-cp1255" ],
     [ "KOI8-R", "KOI8_R", "x-koi8-r" ],
-    [ "Apple Roman", "MacOSRoman", "x-mac-roman" ],
     // Missing explicit support in TW:
     //   verbatim, atarist, cp855, mac-cyrillic
     // Nota: inputenx defines cp437de = cp437, dec-mcs = decmulti,
-    //   mac-centeuro = macce, nextstep = next
+    //   mac-centeuro = macce, nextstep = next, x-mac-roman = applemac
   ].map(function(l) {
     TeXShopCompatibility && l[1] && l.splice(0, 2, l[1], l[0]);
     return l[0] + " (" + l.slice(l.indexOf("")+1 || 1).join(", ") + ")";
