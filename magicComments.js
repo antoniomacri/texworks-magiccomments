@@ -68,9 +68,39 @@ var breadcrumbs = TW.target.fileName.split(reSplit).slice(0,-1);
 function GetEncodingList()
 {
   return [
+    // From inputenc:
     [ "UTF-8", "UTF-8 Unicode", "utf-8" ],
     [ "ISO-8859-1", "IsoLatin", "latin1" ],
+    [ "ISO-8859-2", "IsoLatin2", "latin2" ],
+    [ "ISO-8859-3", "", "latin3" ],
+    [ "ISO-8859-4", "", "latin4" ],
+    [ "ISO-8859-9", "IsoLatin5", "latin5" ],
+    [ "ISO-8859-15", "IsoLatin9", "latin9" ],
+    [ "ISO-8859-16", "", "latin10" ],
+    [ "ISO-8859-1", "IsoLatin" ],
+    [ "IBM850", "", "cp850" ],
     [ "Apple Roman", "MacOSRoman", "applemac" ],
+    [ "Windows-1250", "", "cp1250" ],
+    [ "Windows-1252", "", "cp1252", "ansinew" ],
+    [ "Windows-1257", "", "cp1257" ],
+    // Missing explicit support in TW:
+    //   ascii, decmulti, cp852, cp858, cp437, cp437de, cp865, macce, next
+    // Nota: ascii (7-bit) is included in ISO-8859-1 and UTF-8
+    // From inputenx:
+    [ "ISO-8859-5", "", "iso88595" ],
+    [ "ISO-8859-8", "", "x-iso-8859-8" ],
+    [ "ISO-8859-10", "", "x-latin6" ],
+    [ "ISO-8859-13", "", "x-latin7" ],
+    [ "ISO-8859-14", "", "x-latin8" ],
+    [ "IBM866", "", "x-cp866" ],
+    [ "Windows-1251", "Windows Cyrillic", "x-cp1251" ],
+    [ "Windows-1255", "", "x-cp1255" ],
+    [ "KOI8-R", "KOI8_R", "x-koi8-r" ],
+    [ "Apple Roman", "MacOSRoman", "x-mac-roman" ],
+    // Missing explicit support in TW:
+    //   verbatim, atarist, cp855, mac-cyrillic
+    // Nota: inputenx defines cp437de = cp437, dec-mcs = decmulti,
+    //   mac-centeuro = macce, nextstep = next
   ].map(function(l) {
     TeXShopCompatibility && l[1] && l.splice(0, 2, l[1], l[0]);
     return l[0] + " (" + l.slice(l.indexOf("")+1 || 1).join(", ") + ")";
