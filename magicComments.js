@@ -2,8 +2,8 @@
 // Title: Edit &magic comments...
 // Description: Edit magic comments
 // Author: Antonio Macrì
-// Version: 0.9
-// Date: 2012-09-02
+// Version: 0.9.1
+// Date: 2012-09-18
 // Script-Type: standalone
 // Context: TeXDocument
 // Shortcut: Ctrl+K, Ctrl+M
@@ -65,11 +65,17 @@ var reSplit = new RegExp("[\\\\/]");
 var breadcrumbs = TW.target.fileName.split(reSplit).slice(0,-1);
 
 
-var EncodingList = [
-  [ "UTF-8", "UTF-8 Unicode", "utf-8" ],
-  [ "ISO-8859-1", "IsoLatin", "latin1" ],
-  [ "Apple Roman", "MacOSRoman", "applemac" ],
-];
+function GetEncodingList()
+{
+  return [
+    [ "UTF-8", "UTF-8 Unicode", "utf-8" ],
+    [ "ISO-8859-1", "IsoLatin", "latin1" ],
+    [ "Apple Roman", "MacOSRoman", "applemac" ],
+  ].map(function(l) {
+    TeXShopCompatibility && l[1] && l.splice(0, 2, l[1], l[0]);
+    return l[0] + " (" + l.slice(l.indexOf("")+1 || 1).join(", ") + ")";
+  });
+}
 
 function GetEngineList()
 {
@@ -132,10 +138,7 @@ function MagicComment(o)
 var magicComments = [
   MagicComment({
     Key: "encoding",
-    List: EncodingList.map(function(l) {
-      var index = TeXShopCompatibility ? 1 : 0;
-      return l[index] + " (" + l[1-index] + ", " + l[2] + ")";
-    }),
+    List: GetEncodingList(),
     ToDisplayValue: function() {
       var v = this.Value.toLowerCase();      
       for (var i=0; i < this.List.length; i++) {
@@ -150,12 +153,10 @@ var magicComments = [
       return m ? m[1].trim() : v;
     },
     Produce: function() {
-      var v = this.Value.toLowerCase();
-      var enc = EncodingList.filter(function(e) {
-        return e.some(function(s) { return s.toLowerCase().indexOf(v) >= 0; });
-      })[0];
-      var index = TeXShopCompatibility ? 1 : 0;
-      return fmtMagicComment.format(this.Key, enc ? enc[index] : this.Value);
+      // Rebuild the list in case TeXShopCompatibility has changed
+      this.List = GetEncodingList();
+      var v = this.FromDisplayValue(this.ToDisplayValue());
+      return fmtMagicComment.format(this.Key, v);
     },
   }),
   MagicComment({
