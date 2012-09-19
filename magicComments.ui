@@ -45,7 +45,7 @@
        <item row="0" column="0">
         <widget class="QCheckBox" name="chk-encoding">
          <property name="text">
-          <string>Encoding:</string>
+          <string>&amp;Encoding:</string>
          </property>
         </widget>
        </item>
@@ -66,7 +66,7 @@
        <item row="1" column="0">
         <widget class="QCheckBox" name="chk-program">
          <property name="text">
-          <string>Program:</string>
+          <string>&amp;Program:</string>
          </property>
         </widget>
        </item>
@@ -87,7 +87,7 @@
        <item row="2" column="0">
         <widget class="QCheckBox" name="chk-root">
          <property name="text">
-          <string>Root:</string>
+          <string>&amp;Root:</string>
          </property>
         </widget>
        </item>
@@ -108,7 +108,7 @@
        <item row="3" column="0">
         <widget class="QCheckBox" name="chk-spellcheck">
          <property name="text">
-          <string>Spell check:</string>
+          <string>&amp;Spell check:</string>
          </property>
         </widget>
        </item>
@@ -147,7 +147,7 @@
      <item>
       <widget class="QCheckBox" name="chkTSCompatibility">
        <property name="text">
-        <string>TeXShop compatibility</string>
+        <string>TeXShop &amp;compatibility</string>
        </property>
       </widget>
      </item>
