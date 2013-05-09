@@ -151,7 +151,7 @@ function GetDictionaryList()
 }
 
 
-function MagicComment(o)
+function CreateMagicComment(o)
 {
   o.Regex = o.Regex || new RegExp("% *!TEX +" + o.Key + " *= *(.+)\\n", "i");
   o.ToDisplayValue = o.ToDisplayValue || function() { return this.Value; };
@@ -164,11 +164,11 @@ function MagicComment(o)
 
 
 var magicComments = [
-  MagicComment({
+  CreateMagicComment({
     Key: "encoding",
     List: GetEncodingList(),
     ToDisplayValue: function() {
-      var v = this.Value.toLowerCase();      
+      var v = this.Value.toLowerCase();
       for (var i=0; i < this.List.length; i++) {
         if (this.List[i].toLowerCase().indexOf(v) >= 0) {
           return this.List[i];
@@ -187,7 +187,7 @@ var magicComments = [
       return fmtMagicComment.format(this.Key, v);
     },
   }),
-  MagicComment({
+  CreateMagicComment({
     Key: "program",
     Regex: /% *!TEX +(?:TS-)?program *= *(.+)\n/i,
     List: GetEngineList() || [
@@ -208,7 +208,7 @@ var magicComments = [
         "TS-program" : "program", this.Value);
     },
   }),
-  MagicComment({
+  CreateMagicComment({
     Key: "root",
     List: GetDocumentList(),
     Produce: function() {
@@ -216,7 +216,7 @@ var magicComments = [
       return fmtMagicComment.format(this.Key, this.Value.replace(/\\/g, '/'));
     },
   }),
-  MagicComment({
+  CreateMagicComment({
     Key: "spellcheck",
     List: GetDictionaryList() || [
       "de_DE",
