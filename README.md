@@ -16,6 +16,8 @@ The script supports the following comments:
 
 Of course, you can insert any value you want for magic comments, though provided list aims to contain only recognized values. For a complete list of supported values on your system for each option, you may refer to the TeXworks preferences.
 
+_Thanks to Claudio Beccari and Tommaso Gordini, for all suggestions and for the help in finding TeXShop compatibility issues._
+
 
 Installation instructions
 =========================
