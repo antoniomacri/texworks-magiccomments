@@ -93,158 +93,190 @@ var PEEK_LENGTH = 1024;  // from TeXworks' sources
 var fmtMagicComment = "% !TeX %0 = %1\n";
 
 
-function GetEncodingList()
+function MagicComment(key, regexkey)
 {
-  return [
-    // From inputenc:
-    [ "UTF-8", "UTF-8 Unicode", "utf-8" ],
-    [ "ISO-8859-1", "IsoLatin", "latin1" ],
-    [ "ISO-8859-2", "IsoLatin2", "latin2" ],
-    [ "ISO-8859-3", "", "latin3" ],
-    [ "ISO-8859-4", "", "latin4" ],
-    [ "ISO-8859-9", "IsoLatin5", "latin5" ],
-    [ "ISO-8859-15", "IsoLatin9", "latin9" ],
-    [ "ISO-8859-16", "", "latin10" ],
-    [ "IBM850", "", "cp850" ],
-    [ "Windows-1250", "", "cp1250" ],
-    [ "Windows-1252", "", "cp1252", "ansinew" ],
-    [ "Windows-1257", "", "cp1257" ],
-    [ "Apple Roman", "MacOSRoman", "applemac", "x-mac-roman" ],
-    // Missing explicit support in TW:
-    //   ascii, decmulti, cp852, cp858, cp437, cp437de, cp865, macce, next
-    // Nota: ascii (7-bit) is included in ISO-8859-1 and UTF-8
-    // From inputenx:
-    [ "ISO-8859-5", "", "iso88595" ],
-    [ "ISO-8859-8", "", "x-iso-8859-8" ],
-    [ "ISO-8859-10", "", "x-latin6" ],
-    [ "ISO-8859-13", "", "x-latin7" ],
-    [ "ISO-8859-14", "", "x-latin8" ],
-    [ "IBM866", "", "x-cp866" ],
-    [ "Windows-1251", "Windows Cyrillic", "x-cp1251" ],
-    [ "Windows-1255", "", "x-cp1255" ],
-    [ "KOI8-R", "KOI8_R", "x-koi8-r" ],
-    // Missing explicit support in TW:
-    //   verbatim, atarist, cp855, mac-cyrillic
-    // Nota: inputenx defines cp437de = cp437, dec-mcs = decmulti,
-    //   mac-centeuro = macce, nextstep = next, x-mac-roman = applemac
-  ].map(function(l) {
-    TeXShopCompatibility && l[1] && l.splice(0, 2, l[1], l[0]);
-    return l[0] + " (" + l.slice(l.indexOf("")+1 || 1).join(", ") + ")";
-  });
-}
+  this.Key = key;
+  this.Regex = new RegExp("% *!TEX +" + (regexkey || key) + " *= *(.+)\\n", "i");
+  this.Value = "";
+  this.IsTeXShopSyntax = false;
 
-function GetEngineList()
-{
-  // TW.getEngineList introduced in r1024
-  if (!TW.getEngineList) {
-    return null;
+  this.FromCommentString = function(match) {
+    this.Index = match.index;
+    this.Length = match[0].length;
+    this.Value = match[1].trim();
   }
-  return TW.getEngineList().map(function (e) { return e.name; });
-}
 
-function GetDocumentList()
-{
-  var rootFolder = Path.getParentFolder(TW.target.fileName);
-  return TW.app.getOpenWindows().filter(function(w) {
-    return w.objectName == "TeXDocument";
-  }).map(function(w) {
-    return Path.getRelativePath(w.fileName, rootFolder);
-  });
-}
-
-function GetDictionaryList()
-{
-  // TW.getDictionaryList introduced in r962
-  if (!TW.getDictionaryList) {
-    return null;
+  this.ToDisplayValue = function() {
+    return this.Value;
   }
-  var result = [];
-  var list = TW.getDictionaryList();
-  for (var d in list) {
-    // avoid multiple references to the same dictionary
-    if (result.indexOf(list[d][0]) < 0) {
-      result.push(list[d][0]);
-    }
+
+  this.FromDisplayValue = function(value) {
+    return this.Value = value;
   }
-  return result.map(Path.getFileNameWithoutExtension);
-}
 
-
-function CreateMagicComment(o)
-{
-  o.Regex = o.Regex || new RegExp("% *!TEX +" + o.Key + " *= *(.+)\\n", "i");
-  o.ToDisplayValue = o.ToDisplayValue || function() { return this.Value; };
-  o.FromDisplayValue = o.FromDisplayValue || function(v) { return v; };
-  o.Produce = o.Produce || function() {
+  this.ToCommentString = function() {
     return fmtMagicComment.format(this.Key, this.Value);
-  };
-  return o;
+  }
+}
+
+
+function EncodingMagicComment()
+{
+  MagicComment.call(this, "encoding");
+
+  this.ToDisplayValue = function() {
+    var list = this.GetList(), value = this.Value.toLowerCase();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].toLowerCase().indexOf(value) >= 0) {
+        return list[i];
+      }
+    }
+    return this.Value;
+  }
+
+  this.FromDisplayValue = function(value) {
+    var m = /^(.+)\(.+\)\s*$/.exec(value);
+    this.Value = m ? m[1].trim() : value;
+    return this.Value;
+  }
+
+  this.ToCommentString = function() {
+    var v = this.FromDisplayValue(this.ToDisplayValue());
+    return fmtMagicComment.format(this.Key, v);
+  }
+
+  this.GetList = function() {
+    return [
+      // From inputenc:
+      [ "UTF-8", "UTF-8 Unicode", "utf-8" ],
+      [ "ISO-8859-1", "IsoLatin", "latin1" ],
+      [ "ISO-8859-2", "IsoLatin2", "latin2" ],
+      [ "ISO-8859-3", "", "latin3" ],
+      [ "ISO-8859-4", "", "latin4" ],
+      [ "ISO-8859-9", "IsoLatin5", "latin5" ],
+      [ "ISO-8859-15", "IsoLatin9", "latin9" ],
+      [ "ISO-8859-16", "", "latin10" ],
+      [ "IBM850", "", "cp850" ],
+      [ "Windows-1250", "", "cp1250" ],
+      [ "Windows-1252", "", "cp1252", "ansinew" ],
+      [ "Windows-1257", "", "cp1257" ],
+      [ "Apple Roman", "MacOSRoman", "applemac", "x-mac-roman" ],
+      // Missing explicit support in TW:
+      //   ascii, decmulti, cp852, cp858, cp437, cp437de, cp865, macce, next
+      // Nota: ascii (7-bit) is included in ISO-8859-1 and UTF-8
+      // From inputenx:
+      [ "ISO-8859-5", "", "iso88595" ],
+      [ "ISO-8859-8", "", "x-iso-8859-8" ],
+      [ "ISO-8859-10", "", "x-latin6" ],
+      [ "ISO-8859-13", "", "x-latin7" ],
+      [ "ISO-8859-14", "", "x-latin8" ],
+      [ "IBM866", "", "x-cp866" ],
+      [ "Windows-1251", "Windows Cyrillic", "x-cp1251" ],
+      [ "Windows-1255", "", "x-cp1255" ],
+      [ "KOI8-R", "KOI8_R", "x-koi8-r" ],
+      // Missing explicit support in TW:
+      //   verbatim, atarist, cp855, mac-cyrillic
+      // Nota: inputenx defines cp437de = cp437, dec-mcs = decmulti,
+      //   mac-centeuro = macce, nextstep = next, x-mac-roman = applemac
+    ].map(function(l) {
+      TeXShopCompatibility && l[1] && l.splice(0, 2, l[1], l[0]);
+      return l[0] + " (" + l.slice(l.indexOf("")+1 || 1).join(", ") + ")";
+    });
+  }
+}
+
+
+function ProgramMagicComment()
+{
+  MagicComment.call(this, "program", "(TS-)?program");
+
+  this.FromCommentString = function(match) {
+    this.Index = match.index;
+    this.Length = match[0].length;
+    this.Value = match[2].trim();
+    this.IsTeXShopSyntax = !!match[1];
+  }
+
+  this.ToCommentString = function() {
+    return fmtMagicComment.format(TeXShopCompatibility ?
+      "TS-program" : "program", this.Value);
+  }
+
+  this.GetList = function() {
+    // TW.getEngineList introduced in r1024
+    if (!TW.getEngineList) {
+      return [
+        "pdfLaTeX",
+        "XeLaTeX",
+        "LuaLaTeX",
+        "pdfTeX",
+        "XeTeX",
+        "LuaTeX",
+        "ConTeXt (LuaTeX)",
+        "ConTeXt (pdfTeX)",
+        "ConTeXt (XeTeX)",
+        "BibTeX",
+        "MakeIndex",
+      ];
+    }
+    return TW.getEngineList().map(function (e) { return e.name; });
+  }
+}
+
+
+function RootMagicComment()
+{
+  MagicComment.call(this, "root");
+
+  this.ToCommentString = function() {
+    // On Unix systems, TeXworks requires slashes, not backslashes
+    return fmtMagicComment.format(this.Key, this.Value.replace(/\\/g, '/'));
+  }
+
+  this.GetList = function() {
+    var rootFolder = Path.getParentFolder(TW.target.fileName);
+    return TW.app.getOpenWindows().filter(function(w) {
+      return w.objectName == "TeXDocument";
+    }).map(function(w) {
+      return Path.getRelativePath(w.fileName, rootFolder);
+    });
+  }
+}
+
+
+function SpellcheckMagicComment()
+{
+  MagicComment.call(this, "spellcheck");
+
+  this.GetList = function() {
+    // TW.getDictionaryList introduced in r962
+    if (!TW.getDictionaryList) {
+      return [
+        "de_DE",
+        "en_US",
+        "es_ES",
+        "fr_FR",
+        "it_IT",
+      ];
+    }
+    var result = [];
+    var list = TW.getDictionaryList();
+    for (var d in list) {
+      // avoid multiple references to the same dictionary
+      if (result.indexOf(list[d][0]) < 0) {
+        result.push(list[d][0]);
+      }
+    }
+    return result.map(Path.getFileNameWithoutExtension);
+  }
 }
 
 
 var magicComments = [
-  CreateMagicComment({
-    Key: "encoding",
-    List: GetEncodingList(),
-    ToDisplayValue: function() {
-      var v = this.Value.toLowerCase();
-      for (var i=0; i < this.List.length; i++) {
-        if (this.List[i].toLowerCase().indexOf(v) >= 0) {
-          return this.List[i];
-        }
-      }
-      return this.Value;
-    },
-    FromDisplayValue: function(v) {
-      var m = /^(.+)\(.+\)\s*$/.exec(v);
-      return m ? m[1].trim() : v;
-    },
-    Produce: function() {
-      // Rebuild the list in case TeXShopCompatibility has changed
-      this.List = GetEncodingList();
-      var v = this.FromDisplayValue(this.ToDisplayValue());
-      return fmtMagicComment.format(this.Key, v);
-    },
-  }),
-  CreateMagicComment({
-    Key: "program",
-    Regex: /% *!TEX +(?:TS-)?program *= *(.+)\n/i,
-    List: GetEngineList() || [
-      "pdfLaTeX",
-      "XeLaTeX",
-      "LuaLaTeX",
-      "pdfTeX",
-      "XeTeX",
-      "LuaTeX",
-      "ConTeXt (LuaTeX)",
-      "ConTeXt (pdfTeX)",
-      "ConTeXt (XeTeX)",
-      "BibTeX",
-      "MakeIndex",
-    ],
-    Produce: function() {
-      return fmtMagicComment.format(TeXShopCompatibility ?
-        "TS-program" : "program", this.Value);
-    },
-  }),
-  CreateMagicComment({
-    Key: "root",
-    List: GetDocumentList(),
-    Produce: function() {
-      // On Unix systems, TeXworks requires slashes, not backslashes
-      return fmtMagicComment.format(this.Key, this.Value.replace(/\\/g, '/'));
-    },
-  }),
-  CreateMagicComment({
-    Key: "spellcheck",
-    List: GetDictionaryList() || [
-      "de_DE",
-      "en_US",
-      "es_ES",
-      "fr_FR",
-      "it_IT",
-    ],
-  }),
+  new EncodingMagicComment(),
+  new ProgramMagicComment(),
+  new RootMagicComment(),
+  new SpellcheckMagicComment(),
 ];
 
 
@@ -257,9 +289,10 @@ function ReadMagicCommentsFromDocument()
   magicComments.forEach(function(o) {
     var m = o.Regex.exec(header);
     if (m) {
-      o.Index = m.index;
-      o.Length = m[0].length;
-      o.Value = m[1].trim();
+      o.FromCommentString(m);
+      if(o.IsTeXShopSyntax) {
+        TeXShopCompatibility = true;
+      }
     }
   });
 }
@@ -277,7 +310,7 @@ function WriteMagicCommentsToDocument()
     var d2 = typeof(o2.Index) != "undefined";
     return d1 && d2 ? o1.Index - o2.Index : d2 - d1;
   }).forEach(function(o) {
-    var rep = o.Value ? o.Produce() : "";
+    var rep = o.Value ? o.ToCommentString() : "";
     if (typeof(o.Index) != "undefined") {
       TW.target.selectRange(o.Index + offset, o.Length);
       last = o.Index + offset + rep.length;
@@ -308,12 +341,12 @@ function ShowDialog(ui_file)
   xml = xml.result;
 
   magicComments.forEach(function(o) {
-    var list = "";
-    for (var i = 0; i < o.List.length; i++) {
-      list += "<item><property name=\"text\"><string>" +
-        EscapeXml(o.List[i]) + "</string></property></item>";
+    var list = o.GetList(), listXml = "";
+    for (var i = 0; i < list.length; i++) {
+      listXml += "<item><property name=\"text\"><string>" +
+        EscapeXml(list[i]) + "</string></property></item>";
     }
-    xml = xml.replace("{list-" + o.Key + "}", list);
+    xml = xml.replace("{list-" + o.Key + "}", listXml);
   });
 
   var dialog = TW.createUIFromString(xml);
@@ -322,10 +355,10 @@ function ShowDialog(ui_file)
     return false;
   }
 
-  var cmb = [], chk = [];
+  var chk = [], cmb = [];
   magicComments.forEach(function(o) {
-    cmb[o.Key] = TW.findChildWidget(dialog, "cmb-" + o.Key);
     chk[o.Key] = TW.findChildWidget(dialog, "chk-" + o.Key);
+    cmb[o.Key] = TW.findChildWidget(dialog, "cmb-" + o.Key);
     cmb[o.Key].editTextChanged.connect(function() {
       chk[o.Key].checked = true;
     });
