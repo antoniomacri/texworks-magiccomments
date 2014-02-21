@@ -2,8 +2,8 @@
 // Title: Edit &magic comments...
 // Description: Edit magic comments
 // Author: Antonio Macrì
-// Version: 0.9.1
-// Date: 2012-09-18
+// Version: 0.9.2
+// Date: 2014-02-21
 // Script-Type: standalone
 // Context: TeXDocument
 // Shortcut: Ctrl+K, Ctrl+M
@@ -57,12 +57,40 @@ function EscapeXml(str)
 }
 
 
+var Path = (function() {
+  var reFileNameWithoutExtension = new RegExp("([^\\\\/]+)\\.[^.]+$");
+  var reParentFolder = new RegExp("^(.*[\\\\/])[^\\\\/]+\\.[^.]+$");
+  var reSplit = new RegExp("[\\\\/]");
+  return  {
+    getFileNameWithoutExtension: function(path) {
+      var m  = reFileNameWithoutExtension.exec(path);
+      return m ? m[1] : path;
+    },
+    getParentFolder: function(path) {
+      var m = reParentFolder.exec(path);
+      return m ? m[1] : ".";
+    },
+    // file and folder must be both absolute, or both relative to the same folder
+    getRelativePath: function(file, folder) {
+      var fb = file.split(reSplit).filter(function(e) { return e && e != "."; });
+      var mb = folder.split(reSplit).filter(function(e) { return e && e != "."; });
+      var i = 0;
+      while (i < mb.length && fb[i] == mb[i]) {
+        i++;
+      }
+      var result = fb.slice(i).join('/');
+      if (i < mb.length) {
+        result = new Array(mb.length-i+1).join("../") + result;
+      }
+      return result;
+    },
+  };
+})();
+
+
 var TeXShopCompatibility = false;
 var PEEK_LENGTH = 1024;  // from TeXworks' sources
 var fmtMagicComment = "% !TeX %0 = %1\n";
-
-var reSplit = new RegExp("[\\\\/]");
-var breadcrumbs = TW.target.fileName.split(reSplit).slice(0,-1);
 
 
 function GetEncodingList()
@@ -116,19 +144,11 @@ function GetEngineList()
 
 function GetDocumentList()
 {
+  var rootFolder = Path.getParentFolder(TW.target.fileName);
   return TW.app.getOpenWindows().filter(function(w) {
     return w.objectName == "TeXDocument";
   }).map(function(w) {
-    var b = w.fileName.split(reSplit);
-    var i = 0;
-    while (i < breadcrumbs.length && b[i] == breadcrumbs[i]) {
-      i++;
-    }
-    var result = b.slice(i).join('/');
-    if (i < breadcrumbs.length) {
-      result = new Array(breadcrumbs.length-i+1).join("../") + result;
-    }
-    return result;
+    return Path.getRelativePath(w.fileName, rootFolder);
   });
 }
 
@@ -146,8 +166,7 @@ function GetDictionaryList()
       result.push(list[d][0]);
     }
   }
-  var reFileName = new RegExp("([^\\\\/]+)\\.[^.]+$");
-  return result.map(function(o) { return reFileName.exec(o)[1]; });
+  return result.map(Path.getFileNameWithoutExtension);
 }
 
 
