@@ -2,7 +2,7 @@
 // Title: Edit &magic comments...
 // Description: Edit magic comments
 // Author: Antonio Macrì
-// Version: 0.9.2
+// Version: 0.9.3
 // Date: 2014-02-26
 // Script-Type: standalone
 // Context: TeXDocument
@@ -253,6 +253,12 @@ function RootMagicComment()
     return fmtMagicComment.format(this.Key, this.Value.replace(/\\/g, '/'));
   }
 
+  this.ProvideValue = function() {
+    var file = TW.app.getOpenFileName();
+    var rootFolder = Path.getParentFolder(TW.target.fileName);
+    return file ? Path.getRelativePath(file, rootFolder) : null;
+  }
+
   this.GetList = function() {
     var rootFolder = Path.getParentFolder(TW.target.fileName);
     var list = TW.app.getOpenWindows().filter(function(w) {
@@ -385,13 +391,22 @@ function ShowDialog(ui_file)
     return false;
   }
 
-  var chk = [], cmb = [];
+  var chk = [], cmb = [], btn = [];
   magicComments.forEach(function(o) {
     chk[o.Key] = TW.findChildWidget(dialog, "chk-" + o.Key);
     cmb[o.Key] = TW.findChildWidget(dialog, "cmb-" + o.Key);
+    btn[o.Key] = TW.findChildWidget(dialog, "btn-" + o.Key);
     cmb[o.Key].editTextChanged.connect(function() {
       chk[o.Key].checked = true;
     });
+    if (btn[o.Key]) {
+      btn[o.Key].clicked.connect(function() {
+        var value = o.ProvideValue();
+        if(value) {
+          cmb[o.Key].setEditText(value);
+        }
+      });
+    }
     if (o.Value) {
       chk[o.Key].checked = true;
       cmb[o.Key].setEditText(o.ToDisplayValue());

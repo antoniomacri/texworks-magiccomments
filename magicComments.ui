@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>209</height>
+    <width>450</width>
+    <height>218</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -49,7 +49,7 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
+       <item row="0" column="1" colspan="2">
         <widget class="QComboBox" name="cmb-encoding">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -70,7 +70,7 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="1" column="1" colspan="2">
         <widget class="QComboBox" name="cmb-program">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -105,6 +105,13 @@
          {list-root}
         </widget>
        </item>
+       <item row="2" column="2">
+        <widget class="QPushButton" name="btn-root">
+         <property name="text">
+          <string>Browse...</string>
+         </property>
+        </widget>
+       </item>
        <item row="3" column="0">
         <widget class="QCheckBox" name="chk-spellcheck">
          <property name="text">
@@ -112,7 +119,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="3" column="1" colspan="2">
         <widget class="QComboBox" name="cmb-spellcheck">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
