@@ -1,7 +1,7 @@
 Description
 ===========
 
-This script lets you insert or edit "magic comments" inside TeXworks using a friendly _User Interface_.
+This script lets you insert or edit "magic comments" inside TeXworks with a friendly _User Interface_.
 
 ![TeXworks Magic comments](https://dl.dropbox.com/s/odt83jcnrdo786d/texworks-magiccomments.png "Edit magic comments...")
 
@@ -43,7 +43,7 @@ Installing the script
     * Create a new subfolder, for example "Magic comments", and copy downloaded files into it: it will appear a new submenu (with the same name as the subfolder) containing the menu item _Edit magic comments..._
 5. Go to menu _Scripts_→_Reload Script List_
 
-Be careful to put all the files into the same folder.
+Be careful to put all files into the same folder.
 
 
 Running the script
