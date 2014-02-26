@@ -3,7 +3,7 @@
 // Description: Edit magic comments
 // Author: Antonio Macrì
 // Version: 0.9.2
-// Date: 2014-02-21
+// Date: 2014-02-26
 // Script-Type: standalone
 // Context: TeXDocument
 // Shortcut: Ctrl+K, Ctrl+M
@@ -146,7 +146,7 @@ function EncodingMagicComment()
   }
 
   this.GetList = function() {
-    return [
+    var list = [
       // From inputenc:
       [ "UTF-8", "UTF-8 Unicode", "utf-8" ],
       [ "ISO-8859-1", "IsoLatin", "latin1" ],
@@ -182,6 +182,16 @@ function EncodingMagicComment()
       TeXShopCompatibility && l[1] && l.splice(0, 2, l[1], l[0]);
       return l[0] + " (" + l.slice(l.indexOf("")+1 || 1).join(", ") + ")";
     });
+    if (this.Value) {
+      var value = this.Value.toLowerCase(), i = 0;
+      while (i < list.length && list[i].toLowerCase().indexOf(value) >= 0) {
+        i++;
+      }
+      if (i < list.length) {
+        list.unshift(this.Value);
+      }
+    }
+    return list;
   }
 }
 
@@ -203,9 +213,10 @@ function ProgramMagicComment()
   }
 
   this.GetList = function() {
+    var list;
     // TW.getEngineList introduced in r1024
     if (!TW.getEngineList) {
-      return [
+      list = [
         "pdfLaTeX",
         "XeLaTeX",
         "LuaLaTeX",
@@ -219,7 +230,16 @@ function ProgramMagicComment()
         "MakeIndex",
       ];
     }
-    return TW.getEngineList().map(function (e) { return e.name; });
+    else {
+      list = TW.getEngineList().map(function (e) { return e.name; });
+    }
+    if (this.Value) {
+      // Case sensitive comparison
+      if (list.indexOf(this.ToDisplayValue()) < 0) {
+        list.unshift(this.Value);
+      }
+    }
+    return list;
   }
 }
 
@@ -235,11 +255,15 @@ function RootMagicComment()
 
   this.GetList = function() {
     var rootFolder = Path.getParentFolder(TW.target.fileName);
-    return TW.app.getOpenWindows().filter(function(w) {
+    var list = TW.app.getOpenWindows().filter(function(w) {
       return w.objectName == "TeXDocument";
     }).map(function(w) {
       return Path.getRelativePath(w.fileName, rootFolder);
     });
+    if (this.Value && list.indexOf(this.ToDisplayValue()) < 0) {
+      list.unshift(this.Value);
+    }
+    return list;
   }
 }
 
@@ -249,9 +273,10 @@ function SpellcheckMagicComment()
   MagicComment.call(this, "spellcheck");
 
   this.GetList = function() {
+    var list = [];
     // TW.getDictionaryList introduced in r962
     if (!TW.getDictionaryList) {
-      return [
+      list = [
         "de_DE",
         "en_US",
         "es_ES",
@@ -259,15 +284,20 @@ function SpellcheckMagicComment()
         "it_IT",
       ];
     }
-    var result = [];
-    var list = TW.getDictionaryList();
-    for (var d in list) {
-      // avoid multiple references to the same dictionary
-      if (result.indexOf(list[d][0]) < 0) {
-        result.push(list[d][0]);
+    else {
+      var diclist = TW.getDictionaryList();
+      for (var d in diclist) {
+        // avoid multiple references to the same dictionary
+        if (list.indexOf(diclist[d][0]) < 0) {
+          list.push(diclist[d][0]);
+        }
       }
+      list = list.map(Path.getFileNameWithoutExtension);
     }
-    return result.map(Path.getFileNameWithoutExtension);
+    if (this.Value && list.indexOf(this.ToDisplayValue()) < 0) {
+      list.unshift(this.Value);
+    }
+    return list
   }
 }
 
