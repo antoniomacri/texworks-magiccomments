@@ -28,8 +28,8 @@ Obtaining required files
 
 Download the following files:
 
-* [magicComments.js](https://bitbucket.org/antoniomacri/texworks-magiccomments/raw/master/magicComments.js)
-* [magicComments.ui](https://bitbucket.org/antoniomacri/texworks-magiccomments/raw/master/magicComments.ui)
+* [magicComments.js](/antoniomacri/texworks-magiccomments/raw/master/magicComments.js)
+* [magicComments.ui](/antoniomacri/texworks-magiccomments/raw/master/magicComments.ui)
 
 
 Installing the script
@@ -61,5 +61,4 @@ Via keyboard:
 Reporting issues
 ================
 
-Please report any issue using the [issue tracker](https://bitbucket.org/antoniomacri/texworks-magiccomments/issues).
-
+Please report any issue using the [issue tracker](/antoniomacri/texworks-magiccomments/issues).
