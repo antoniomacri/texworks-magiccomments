@@ -36,12 +36,12 @@ Installing the script
 ---------------------
 
 1. Open TeXworks
-2. Go to menu _Scripts_→_Scripting TeXworks_
+2. Go to menu _Scripts_ → _Scripting TeXworks_
 3. Select _Show Scripts Folder_: it will open a new window showing the folder in which all scripts reside
 4. Do either one of the following:
     * Copy downloaded files directly into this folder: it will appear a new menu item _Edit magic comments..._ under the _Scripts_ menu
     * Create a new subfolder, for example "Magic comments", and copy downloaded files into it: it will appear a new submenu (with the same name as the subfolder) containing the menu item _Edit magic comments..._
-5. Go to menu _Scripts_→_Reload Script List_
+5. Go to menu _Scripts_ → _Reload Script List_
 
 Be careful to put all files into the same folder.
 
@@ -51,7 +51,7 @@ Running the script
 
 Using menus:
 
-* Go to _Scripts_→_Edit magic comments..._ or _Scripts_→_⟨Selected subfolder⟩_→_Edit magic comments..._
+* Go to _Scripts_ → _Edit magic comments..._ or _Scripts_ → _⟨Selected subfolder⟩_ → _Edit magic comments..._
 
 Via keyboard:
 
