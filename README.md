@@ -3,7 +3,7 @@ Description
 
 This script lets you insert or edit "magic comments" inside TeXworks with a friendly _User Interface_.
 
-![TeXworks Magic comments](https://dl.dropbox.com/s/odt83jcnrdo786d/texworks-magiccomments.png "Edit magic comments...")
+![TeXworks Magic comments](screenshot.png "Edit magic comments...")
 
 As you can see, TeXShop compatibility is also preserved, when possible.
 
@@ -28,8 +28,8 @@ Obtaining required files
 
 Download the following files:
 
-* [magicComments.js](/antoniomacri/texworks-magiccomments/raw/master/magicComments.js)
-* [magicComments.ui](/antoniomacri/texworks-magiccomments/raw/master/magicComments.ui)
+* [magicComments.js](magicComments.js?raw=true)
+* [magicComments.ui](magicComments.ui?raw=true)
 
 
 Installing the script
@@ -61,4 +61,4 @@ Via keyboard:
 Reporting issues
 ================
 
-Please report any issue using the [issue tracker](/antoniomacri/texworks-magiccomments/issues).
+Please report any issue using the issue tracker.
